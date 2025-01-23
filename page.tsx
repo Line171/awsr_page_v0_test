@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import {
   Dialog,
@@ -23,7 +24,6 @@ interface ApiResponse {
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
-  const [imageUrl, setImageUrl] = useState("")
   const [sent, setSent] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [editPrompt, setEditPrompt] = useState("")
@@ -57,15 +57,14 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: editPrompt, imageUrl }),
+        body: JSON.stringify({ prompt: editPrompt }),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
-      }
-
       const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`)
+      }
 
       if (!data.code || !data.demo) {
         throw new Error("Invalid API response format")
@@ -73,8 +72,14 @@ export default function Home() {
 
       setApiResponse(data as ApiResponse)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred")
       console.error("Error:", err)
+      setError(err instanceof Error ? err.message : "An unknown error occurred")
+
+      if (err instanceof Error && err.message.includes("Failed to generate UI")) {
+        setError(
+          "The AI was unable to generate a UI based on your request. Please try rephrasing your prompt or providing more details.",
+        )
+      }
     } finally {
       setIsLoading(false)
     }
@@ -122,19 +127,12 @@ export default function Home() {
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Input
+              <Textarea
                 id="edit-prompt"
                 placeholder="Describe your changes here"
                 value={editPrompt}
                 onChange={(e) => setEditPrompt(e.target.value)}
-                className="bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
-              />
-              <Input
-                id="image-url"
-                placeholder="Image URL (optional)"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
+                className="min-h-[100px] bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
               />
             </div>
             <DialogFooter>
@@ -151,8 +149,8 @@ export default function Home() {
             </DialogFooter>
           </form>
           {error && (
-            <div className="flex items-start space-x-2 text-red-500 mt-2 text-sm">
-              <AlertCircle size={14} className="mt-1 flex-shrink-0" />
+            <div className="flex items-start space-x-2 text-red-500 mt-4 text-sm bg-red-100 dark:bg-red-900 p-3 rounded-md">
+              <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
               <p className="break-words">{error}</p>
             </div>
           )}

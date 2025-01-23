@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -81,6 +82,16 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900 text-gray-100">
+      <div className="mb-8 bg-white rounded-full p-4 inline-block">
+        <Image
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/company-logo-transparent-Fhy4Ib55elqZWdqN5eJSZOvWd11umy.png"
+          alt="Company Logo"
+          width={100}
+          height={100}
+          priority
+          className="w-24 h-24 object-contain"
+        />
+      </div>
       <h1 className="text-3xl font-bold mb-8 text-blue-400">Universal Message Service</h1>
       <Card className="w-full max-w-md bg-gray-800 border-gray-700">
         <CardContent className="pt-6">

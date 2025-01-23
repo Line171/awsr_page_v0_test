@@ -155,9 +155,9 @@ export default function Home() {
             </div>
           )}
           {apiResponse && (
-            <div className="mt-4 space-y-4 text-sm">
-              <h3 className="font-semibold">Click on the buttons below to review your changes:</h3>
-              <div className="flex flex-col sm:flex-row gap-2">
+            <div className="mt-4 space-y-4 text-sm flex flex-col items-center">
+              <h3 className="font-semibold text-center">Click on the buttons below to review your changes:</h3>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center w-full">
                 <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto">
                   <a href={apiResponse.demo} target="_blank" rel="noopener noreferrer">
                     Demo URL

@@ -4,16 +4,35 @@ import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Loader2, AlertCircle } from "lucide-react"
+
+interface ApiResponse {
+  code: string
+  demo: string
+}
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
+  const [imageUrl, setImageUrl] = useState("")
   const [sent, setSent] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editPrompt, setEditPrompt] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Add dark class to html element
     document.documentElement.classList.add("dark")
     return () => {
-      // Remove dark class when component unmounts
       document.documentElement.classList.remove("dark")
     }
   }, [])
@@ -21,7 +40,42 @@ export default function Home() {
   const handleSend = () => {
     if (prompt.trim()) {
       setSent(true)
-      setTimeout(() => setSent(false), 3000) // Hide the message after 3 seconds
+      setTimeout(() => setSent(false), 3000)
+    }
+  }
+
+  const handleEditSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    setApiResponse(null)
+
+    try {
+      const response = await fetch("/api/edit-layout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: editPrompt, imageUrl }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (!data.code || !data.demo) {
+        throw new Error("Invalid API response format")
+      }
+
+      setApiResponse(data as ApiResponse)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred")
+      console.error("Error:", err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -32,7 +86,7 @@ export default function Home() {
         <CardContent className="pt-6">
           <Input
             type="text"
-            placeholder="Enter your prompt"
+            placeholder="Enter your message here"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             className="bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
@@ -45,6 +99,71 @@ export default function Home() {
           {sent && <p className="text-green-400">This has been sent!</p>}
         </CardFooter>
       </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogTrigger asChild>
+          <Button className="fixed bottom-4 right-4 bg-blue-600 hover:bg-blue-700">Edit Layout with v0</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px] w-11/12 max-h-[80vh] overflow-y-auto bg-gray-800 text-gray-100">
+          <DialogHeader>
+            <DialogTitle>Edit Layout</DialogTitle>
+            <DialogDescription>What would you like to change?</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                id="edit-prompt"
+                placeholder="Describe your changes here"
+                value={editPrompt}
+                onChange={(e) => setEditPrompt(e.target.value)}
+                className="bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
+              />
+              <Input
+                id="image-url"
+                placeholder="Image URL (optional)"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+          {error && (
+            <div className="flex items-start space-x-2 text-red-500 mt-2 text-sm">
+              <AlertCircle size={14} className="mt-1 flex-shrink-0" />
+              <p className="break-words">{error}</p>
+            </div>
+          )}
+          {apiResponse && (
+            <div className="mt-4 space-y-4 text-sm">
+              <h3 className="font-semibold">Click on the buttons below to review your changes:</h3>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto">
+                  <a href={apiResponse.demo} target="_blank" rel="noopener noreferrer">
+                    Demo URL
+                  </a>
+                </Button>
+                <Button asChild className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto">
+                  <a href={apiResponse.code} target="_blank" rel="noopener noreferrer">
+                    Demo Code
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
